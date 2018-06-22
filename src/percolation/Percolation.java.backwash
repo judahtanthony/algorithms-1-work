@@ -1,0 +1,195 @@
+/*----------------------------------------------------------------
+ *  Author:        Judah Anthony
+ *  Written:       1/13/2017
+ *  Last updated:  1/14/2017
+ *
+ *  Compilation:   javac-algs4 Percolation.java
+ *  Execution:     cat samples.txt |  java-algs4 Percolation
+ *  
+ *  Prints "YES" if the data set percolates.  Print "No" otherwise.
+ *
+ *  $ cat samples.txt | java-algs4 Percolation
+ *  YES
+ *
+ *----------------------------------------------------------------*/
+import edu.princeton.cs.algs4.StdIn;
+import edu.princeton.cs.algs4.StdOut;
+/*/
+import edu.princeton.cs.algs4.QuickFindUF;
+/*/
+import edu.princeton.cs.algs4.WeightedQuickUnionUF;
+//*/
+public class Percolation {
+    private int size;
+    private int[][] sites;
+    private int head = 0;
+    private int tail = 1;
+    private int gridOffset = 2;
+    private int openCount = 0;
+    /*/
+    private QuickFindUF unionFind;
+    /*/
+    private WeightedQuickUnionUF unionFind;
+    //*/
+    
+    /**
+     * create n-by-n grid, with all sites blocked
+     * 
+     * @param int n
+     * @throws java.lang.IllegalArgumentException
+     */
+    public Percolation(int n) {
+        if (n < 0) {
+            String error = "`n` (" + n + ") cannot be less than zero(0).";
+            throw new IllegalArgumentException(error);
+        }
+        
+        size      = n;
+        sites     = new int[size][size];
+        /*/
+        unionFind = new QuickFindUF(size * size + gridOffset);
+        /*/
+        unionFind = new WeightedQuickUnionUF(size * size + gridOffset);
+        //*/
+    }
+    /**
+     * open site (row, col) if it is not open already
+     * 
+     * @param int row
+     * @param int col
+     * @return void
+     * @throws java.lang.IndexOutOfBoundsException
+     */
+    public void open(int row, int col) {
+        if (!isOpen(row, col)) {
+            openCount += 1;
+            sites[row - 1][col - 1] = 1;
+            connectSites(row, col);
+        }
+    }
+    /**
+     * is site (row, col) open?
+     * 
+     * @param int row
+     * @param int col
+     * @return boolean
+     * @throws java.lang.IndexOutOfBoundsException
+     */
+    public boolean isOpen(int row, int col) {
+        return sites[row - 1][col - 1] == 1;
+    }
+    /**
+     * is site (row, col) full?
+     * 
+     * @param int row
+     * @param int col
+     * @return boolean
+     * @throws java.lang.IndexOutOfBoundsException
+     */
+    public boolean isFull(int row, int col) {
+        return unionFind.connected(head, toOffset(row, col));
+    }
+    /**
+     * number of open sites
+     * 
+     * @return int
+     */
+    public int numberOfOpenSites() {
+        return openCount;
+    }
+    /**
+     * does the system percolate?
+     * 
+     * @return boolean
+     */
+    public boolean percolates() {
+        return unionFind.connected(head, tail);
+    }
+    
+    private void connectSites(int row, int col) {
+        // Up
+        if (row == 1) {
+            connectToHead(row, col);
+        }
+        else if (isOpen(row - 1, col)) {
+            connect(row, col, row - 1, col);
+        }
+        // Right
+        if (col < size && isOpen(row, col + 1)) {
+            connect(row, col, row, col + 1);
+        }
+        // Down
+        if (row == size) {
+            connectToTail(row, col);
+        }
+        else if (isOpen(row + 1, col)) {
+            connect(row, col, row + 1, col);
+        }
+        // Left
+        if (col > 1 && isOpen(row, col - 1)) {
+            connect(row, col, row, col - 1);
+        }
+    }
+    private void connect(int row, int col, int row2, int col2) {
+        unionFind.union(
+            toOffset(row, col),
+            toOffset(row2, col2));
+    }
+    private void connectToHead(int row, int col) {
+        unionFind.union(head, toOffset(row, col));
+    }
+    private void connectToTail(int row, int col) {
+        unionFind.union(tail, toOffset(row, col));
+    }
+    // Translate the grid coordinates to the list offset
+    private int toOffset(int row, int col) {
+        if (row < 1 || row > size) {
+            String error = "`row` (" + row + ") must be between 1 and " + size + " (inclusive).";
+            throw new IndexOutOfBoundsException(error);
+        }
+        if (col < 1 || col > size) {
+            String error = "`col` (" + col + ") must be between 1 and " + size + " (inclusive).";
+            throw new IndexOutOfBoundsException(error);
+        }
+        return ((row - 1) * size + (col - 1)) + gridOffset;
+    }
+    
+    
+    /**
+     * test client (optional)
+     * 
+     * @param String[] args
+     */
+    public static void main(String[] args) {
+        if (StdIn.isEmpty()) {
+            StdOut.println("No input.");
+            return;
+        }
+        int size = StdIn.readInt();
+        if (size < 1) {
+            StdOut.println("The size must be at least 1.");
+            return;
+        }
+        
+        Percolation tester = new Percolation(size);
+        while (StdIn.hasNextLine()) {
+            if (StdIn.isEmpty()) {
+                break;
+            }
+            int r = StdIn.readInt();
+            if (StdIn.isEmpty()) {
+                break;
+            }
+            int c = StdIn.readInt();
+            
+            tester.open(r, c);
+        }
+        
+        if (tester.percolates()) {
+            StdOut.println("YES");
+        }
+        else {
+            StdOut.println("NO");
+        }
+    }
+}
